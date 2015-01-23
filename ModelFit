@@ -1,0 +1,116 @@
+# Example of underfitting and overfitting
+
+x<-1:100/10
+y= x^2 + rnorm(100,0,6)  # introducing normal noise over quadratic
+plot(x,y)
+
+# Ensuring Randomized training, cross validation and test data
+RandomOrder <- sample(1:100,100,replace = F)
+TrainingSet <- sort(RandomOrder[1:60])
+CrossValSet <- sort(RandomOrder[61:80])
+TestSet <- sort(RandomOrder[81:100])
+
+yt<-y[TrainingSet]
+xt<-x[TrainingSet]
+xcv<-x[CrossValSet]
+ycv<-y[CrossValSet]
+xtest<-x[TestSet]
+ytest<-y[TestSet]
+plot(xt,yt)
+points(xcv,ycv,col="red")
+points(xtest,ytest,col="green")
+
+
+# Model 1: Linear Fit
+m1<-lm(yt~xt)
+m1error<- sum((m1$fitted.values-yt)^2 / 60)
+plot(xt,yt)
+lines(xt,m1$fitted.values,type="l")
+m1FitError <- m1$fitted.values-yt
+
+# Model 2 : Quadratic Fit
+m2<-lm(yt ~ xt + I(xt^2) )
+m2error <- sum((m2$fitted.values-yt)^2 / 60)
+lines(xt,m2$fitted.values,type="l",col="red")
+m2FitError <- m2$fitted.values-yt
+
+# Model 3 : 3rd Power Fit
+m3<-lm(yt ~ xt +I(xt^2)+I(xt^3))
+m3error <- sum((m3$fitted.values-yt)^2 / 60)
+lines(xt,m3$fitted.values,type="l",col="blue")
+m3FitError <- m3$fitted.values-yt
+
+# Model 4 : 4th Power Fit
+m4<-lm(yt ~ xt +I(xt^2)+I(xt^3)+ I(xt^4))
+m4error <- sum((m4$fitted.values-yt)^2 / 60)
+lines(xt,m4$fitted.values,type="l",col="green")
+m4FitError <- m4$fitted.values-yt
+
+# Model 5 : sin t Fit
+m5<-lm(yt ~ xt +I(sin(xt)))
+m5error <- sum((m5$fitted.values-yt)^2 / 60)
+lines(xt,m5$fitted.values,type="l",col="purple")
+m5FitError <- m5$fitted.values-yt
+
+# Model 5 : sin t + sin 2t Fit
+m6<-lm(yt ~ xt +I(sin(xt)) +I(sin(2*xt)))
+m6error <- sum((m6$fitted.values-yt)^2 / 60)
+lines(xt,m6$fitted.values,type="l",col="brown")
+m6FitError <- m6$fitted.values-yt
+
+c1<-rbind(m1error,m2error,m3error,m4error,m5error,m6error)
+c2<-cbind(m1FitError,m2FitError,m3FitError,m4FitError,m5FitError,m6FitError)
+
+plot(1:6,c1, type="o",ylab = "Squared Sum of Error")
+
+# Rules out the model 1,4,5, i.e. linear, linear+sin t,linear+sin t + sin 2t
+
+plot(xt,m1FitError,type="l",ylab="Fit Error")
+lines(xt,m2FitError,type="l",col="red")
+lines(xt,m3FitError,type="l",col="blue")
+lines(xt,m4FitError,type="l",col="green")
+lines(xt,m5FitError,type="l",col="purple")
+lines(xt,m6FitError,type="l",col="brown")
+
+# Model 2 Cross Validation 
+m2$coefficients
+ycvp <- m2$coefficients[1]+m2$coefficients[2]*xcv+m2$coefficients[3]*xcv*xcv
+m2cvError  <- sum((ycvp-ycv)^2 / 20)
+plot(xcv,ycv)
+lines(xcv,ycvp,type="o",col="red")
+
+# Model 3 Cross Validation 
+m3$coefficients
+ycvp <- m3$coefficients[1]+m3$coefficients[2]*xcv+m3$coefficients[3]*xcv^2+
+  m3$coefficients[4]*xcv^3
+m3cvError  <- sum((ycvp-ycv)^2 / 20)
+lines(xcv,ycvp,type="o",col="green")
+
+# Model 4 Cross Validation 
+m4$coefficients
+ycvp <- m4$coefficients[1]+m4$coefficients[2]*xcv+m4$coefficients[3]*xcv^2+
+  m4$coefficients[4]*xcv^3+m4$coefficients[4]*xcv^4
+m4cvError  <- sum((ycvp-ycv)^2 / 20)
+plot(xcv,ycv,ylim=c(-2000,2000))
+lines(xcv,ycvp,type="o",col="red")
+
+# Rules out the 4th degree fit
+
+# Model 2 Test
+m2$coefficients
+ytestp <- m2$coefficients[1]+m2$coefficients[2]*xtest+m2$coefficients[3]*xtest^2
+m2testError  <- sum((ytestp-ytest)^2 / 20)
+plot(xtest,ytest)
+lines(xtest,ytestp,type="o",col="red")
+
+# Model 3 Test
+m3$coefficients
+ytestp <- m3$coefficients[1]+m3$coefficients[2]*xtest+m3$coefficients[3]*xtest^2+
+  m3$coefficients[4]*xtest^3
+m3testError  <- sum((ytestp-ytest)^2 / 20)
+lines(xcv,ytestp,type="o",col="green")
+
+# Rules out the 3rd degree fit.
+# Note that actual graphs vary in each run of the code because of rnorm(), the random
+# numbers error introduced. but the procedure is so robust, it rules out the 
+# models except the quadratic, each time! 
